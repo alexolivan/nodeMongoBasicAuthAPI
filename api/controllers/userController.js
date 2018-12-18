@@ -4,7 +4,7 @@ const config = require('../../config');
 const User = require('../models/User.js');
 const Role = require('../models/Role.js');
 
-
+// Auxiliary function for common validation
 validateBody = (req, res) => {
   if(!req.body.username) {
       return res.status(400).send({
@@ -25,39 +25,60 @@ validateBody = (req, res) => {
 
 // Login user
 exports.login = (req, res) => {
-  // Validate request
+  // no auth on HTTP req ... no joy
   if(!req.body.username || !req.body.password) {
     return res.status(403).send({
-        message: "Login failed.1"
+        message: "Login failed."
     });
   }
-
+  // authenticate user agains database
   User.findOne({ username: req.body.username })
   .then(user => {
-      if(!user) {
+    if(!user) {
+      // user not found, auth fails
+      return res.status(403).send({
+          message: "Login failed."
+      });
+    }
+    if(user.password != req.body.password){
+      // user password not matching, auth fails.
+      return res.status(403).send({
+          message: "Login failed."
+      });
+    }
+    // User OK, retrieve authorization level role
+    Role.findById(user.role).then(role => {
+      if(!role) {
+        // role not found, auth fails
         return res.status(403).send({
-            message: "Login failed.2"
+            message: "Login failed."
         });
       }
-      if(user.password != req.body.password){
-        return res.status(403).send({
-            message: "Login failed.3"
-        });
-      }
-      // Generate JWT token.
-      const token = jwt.sign({username: req.body.username},
+      // Taylor JWT token along with user and role.
+      const token = jwt.sign(
+          {
+            username: req.body.username,
+            role: role.name
+          },
           config.jwt.secret,
           { expiresIn: '1h' }
         );
       res.status(200).send({
           success: true,
           message: 'Authentication successful!',
-          role: user.role,
+          role: role.name,
           token: token
       });
+    // Can't get Role ... auth fails.
+    }).catch(err => {
+      return res.status(403).send({
+          message: "Login Failed."
+      });
+    });
+  // Can't get User... auth fails.
   }).catch(err => {
     return res.status(403).send({
-        message: "Login Failed.4"
+        message: "Login Failed."
     });
   });
 };
@@ -130,39 +151,42 @@ exports.findOne = (req, res) => {
 exports.update = (req, res) => {
   // Validate request
   validateBody(req, res);
-
+  // Get updated Role
   Role.findOne({ name: req.body.role })
   .then(role => {
-      // Find user and update it with the request body
-      User.findByIdAndUpdate(req.params.userId, {
-        username: req.body.username,
-        password: req.body.password,
-        role: role,
-        desc: req.body.desc || ""
-      }, {new: true})
-      .then(user => {
-          if(!user) {
-              return res.status(404).send({
-                  message: "User not found with id " + req.params.userId
-              });
-          }
-          res.status(202).send(user);
-      }).catch(err => {
-          if(err.kind === 'ObjectId') {
-              return res.status(404).send({
-                  message: "User not found with id " + req.params.userId
-              });
-          }
-          return res.status(500).send({
-              message: "Error updating user with id " + req.params.userId
-          });
-      });
+    // Find user and update it with the request body
+    User.findByIdAndUpdate(req.params.userId, {
+      username: req.body.username,
+      password: req.body.password,
+      role: role,
+      desc: req.body.desc || ""
+    }, {new: true})
+    .then(user => {
+        // User not found... unable to comply
+        if(!user) {
+            return res.status(404).send({
+                message: "User not found with id " + req.params.userId
+            });
+        }
+        // Success! ... report back
+        res.status(202).send(user);
+    // Failures retrieving User
     }).catch(err => {
+        if(err.kind === 'ObjectId') {
+            return res.status(404).send({
+                message: "User not found with id " + req.params.userId
+            });
+        }
         return res.status(500).send({
-            message: err.message || "Some error occurred while retrieving role."
+            message: "Error updating user with id " + req.params.userId
         });
     });
-
+  // Failure retrieving Role.  
+  }).catch(err => {
+      return res.status(500).send({
+          message: err.message || "Some error occurred while retrieving role."
+      });
+  });
 };
 
 // Delete a user with the specified userId in the request
