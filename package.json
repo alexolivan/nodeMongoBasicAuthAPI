@@ -1,7 +1,7 @@
 {
   "name": "basicauthapi",
   "version": "1.0.0",
-  "description": "A very basic Authenticated Base API",
+  "description": "A very basic Authenticated and Autorized MongoDB based API",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -9,7 +9,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/alexolivan/nodeBasicAuthAPI.git"
+    "url": "git+https://github.com/alexolivan/nodeMongoBasicAuthAPI.git"
   },
   "keywords": [
     "Node",
@@ -17,14 +17,15 @@
     "RestAPI",
     "MongoDB",
     "Mongoose",
-    "Authenticated"
+    "Authenticated",
+    "Authorized"
   ],
-  "author": "Alejandro Olivan",
+  "author": "Alejandro Olivan Alvarez",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/alexolivan/nodeBasicAuthAPI/issues"
+    "url": "https://github.com/alexolivan/nodeMongoBasicAuthAPI/issues"
   },
-  "homepage": "https://github.com/alexolivan/nodeBasicAuthAPI#readme",
+  "homepage": "https://github.com/alexolivan/nodeMongoBasicAuthAPI#readme",
   "dependencies": {
     "body-parser": "^1.18.3",
     "cors": "^2.8.5",
